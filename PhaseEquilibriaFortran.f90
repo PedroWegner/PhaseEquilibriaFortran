@@ -29,6 +29,10 @@
     m_global = [1.2053, 1.0]
     sigma_global = [3.313, 3.7039]
     epsilo_global = [90.96, 150.03]
+    !x_global = [1.0]
+    !m_global = [2.3316]
+    !sigma_global = [3.7086]
+    !epsilo_global = [222.8]
     T_global = 200.0d0
     P_global = 30.0d5
     

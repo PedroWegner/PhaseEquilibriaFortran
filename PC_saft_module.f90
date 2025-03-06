@@ -41,6 +41,26 @@ module PC_saft_module
         REAL(8), ALLOCATABLE :: e_ij(:, :)          ! Energia de interecao (eh o epsilon)
         REAL(8), ALLOCATABLE :: s_ij(:, :)          ! Diametro de interacao (eh o sigma)
         REAL(8), ALLOCATABLE :: grad_g_ij_rho(:, :) ! Definido pela EQ (A.27)
+        
+        ! Arrays para a fugacidade
+        REAL(8), ALLOCATABLE :: phi(:)              ! O coef. da fugacidade
+        REAL(8), ALLOCATABLE :: ln_phi(:)           ! Definido pela EQ (A.32), o log natural do coef. de fugacidade
+        REAL(8), ALLOCATABLE :: mi_kT(:)            ! Definido pela EQ (A.33), potencial quimico adimensional
+        REAL(8), ALLOCATABLE :: zeta_x(:,:)         ! Definido pela EQ (A.34)
+        REAL(8), ALLOCATABLE :: prime_a_hs_x(:)     ! Definido pela EQ (A.35)
+        REAL(8), ALLOCATABLE :: prime_a_hc_x(:)     ! Definido pela EQ (A.36), relacao com hard chain
+        REAL(8), ALLOCATABLE :: grad_g_ij_x(:, :, :)   ! Definidio pela EQ (A.37)
+        REAL(8), ALLOCATABLE :: prime_a_disp_x(:)   ! Definidio pela EQ (A.3)
+        REAL(8), ALLOCATABLE :: m2es3_x(:)          ! Definidio pela EQ (A.39)
+        REAL(8), ALLOCATABLE :: m2e2s3_x(:)         ! Definidio pela EQ (A.40)
+        REAL(8), ALLOCATABLE :: C_1_x(:)            ! Definidio pela EQ (A.41)
+        REAL(8), ALLOCATABLE :: I_1_x(:)            ! Definidio pela EQ (A.42)
+        REAL(8), ALLOCATABLE :: I_2_x(:)            ! Definidio pela EQ (A.43)
+        REAL(8), ALLOCATABLE :: a_x(:,:)            ! Definido pela EQ (A.44)
+        REAL(8), ALLOCATABLE :: b_x(:,:)            ! Definido pela EQ (A.45)
+        REAL(8), ALLOCATABLE :: prime_a_res_x(:)    
+        
+        
     end TYPE PC_saft_state
     
 
@@ -80,6 +100,26 @@ CONTAINS
         IF (.NOT. ALLOCATED(state%e_ij)) ALLOCATE(state%e_ij(n, n))
         IF (.NOT. ALLOCATED(state%s_ij)) ALLOCATE(state%s_ij(n, n))
         IF (.NOT. ALLOCATED(state%grad_g_ij_rho)) ALLOCATE(state%grad_g_ij_rho(n, n))
+        
+        
+        ! Aloca arrays para calcular fugacidade
+        IF (.NOT. ALLOCATED(state%phi)) ALLOCATE(state%phi(n))
+        IF (.NOT. ALLOCATED(state%ln_phi)) ALLOCATE(state%ln_phi(n))
+        IF (.NOT. ALLOCATED(state%mi_kT)) ALLOCATE(state%mi_kT(n))
+        IF (.NOT. ALLOCATED(state%zeta_x)) ALLOCATE(state%zeta_x(4, n)) ! O numero de linhas eh fixado em 4
+        IF (.NOT. ALLOCATED(state%prime_a_hs_x)) ALLOCATE(state%prime_a_hs_x(n))
+        IF (.NOT. ALLOCATED(state%prime_a_hc_x)) ALLOCATE(state%prime_a_hc_x(n))
+        IF (.NOT. ALLOCATED(state%grad_g_ij_x)) ALLOCATE(state%grad_g_ij_x(n, n, n))
+        IF (.NOT. ALLOCATED(state%prime_a_disp_x)) ALLOCATE(state%prime_a_disp_x(n))
+        IF (.NOT. ALLOCATED(state%m2es3_x)) ALLOCATE(state%m2es3_x(n))
+        IF (.NOT. ALLOCATED(state%m2e2s3_x)) ALLOCATE(state%m2e2s3_x(n))
+        IF (.NOT. ALLOCATED(state%C_1_x)) ALLOCATE(state%C_1_x(n))
+        IF (.NOT. ALLOCATED(state%I_1_x)) ALLOCATE(state%I_1_x(n))
+        IF (.NOT. ALLOCATED(state%I_2_x)) ALLOCATE(state%I_2_x(n))
+        IF (.NOT. ALLOCATED(state%a_x)) ALLOCATE(state%a_x(7, n))
+        IF (.NOT. ALLOCATED(state%b_x)) ALLOCATE(state%b_x(7, n))
+        IF (.NOT. ALLOCATED(state%prime_a_res_x)) ALLOCATE(state%prime_a_res_x(n))
+  
     END SUBROUTINE allocate_state_arrays
     
     SUBROUTINE destroy_state(state)
@@ -100,6 +140,24 @@ CONTAINS
         IF (ALLOCATED(state%e_ij)) DEALLOCATE(state%e_ij)
         IF (ALLOCATED(state%s_ij)) DEALLOCATE(state%s_ij)
         IF (ALLOCATED(state%grad_g_ij_rho)) DEALLOCATE(state%grad_g_ij_rho)
+        
+        ! Dealoca arrays para calcular fugacidade
+        IF (ALLOCATED(state%phi)) DEALLOCATE(state%phi)
+        IF (ALLOCATED(state%ln_phi)) DEALLOCATE(state%ln_phi)
+        IF (ALLOCATED(state%mi_kT)) DEALLOCATE(state%mi_kT)
+        IF (ALLOCATED(state%zeta_x)) DEALLOCATE(state%zeta_x)
+        IF (ALLOCATED(state%prime_a_hs_x)) DEALLOCATE(state%prime_a_hs_x)
+        IF (ALLOCATED(state%prime_a_hc_x)) DEALLOCATE(state%prime_a_hc_x)
+        IF (ALLOCATED(state%grad_g_ij_x)) DEALLOCATE(state%grad_g_ij_x)
+        IF (ALLOCATED(state%prime_a_disp_x)) DEALLOCATE(state%prime_a_disp_x)
+        IF (ALLOCATED(state%m2es3_x)) DEALLOCATE(state%m2es3_x)
+        IF (ALLOCATED(state%m2e2s3_x)) DEALLOCATE(state%m2e2s3_x)
+        IF (ALLOCATED(state%C_1_x)) DEALLOCATE(state%C_1_x)
+        IF (ALLOCATED(state%I_1_x)) DEALLOCATE(state%I_1_x)
+        IF (ALLOCATED(state%I_2_x)) DEALLOCATE(state%I_2_x)
+        IF (ALLOCATED(state%a_x)) DEALLOCATE(state%a_x)
+        IF (ALLOCATED(state%b_x)) DEALLOCATE(state%b_x)
+        IF (ALLOCATED(state%prime_a_res_x)) DEALLOCATE(state%prime_a_res_x)
         
         ! Zera os escalares do state
         state%T = 0.0d0
@@ -335,7 +393,7 @@ CONTAINS
         REAL(8) :: sum_aux
         INTEGER :: i
         !!! EQ (A.20)
-        sum_aux = 0.d0
+        sum_aux = 0.0d0
         DO i = 1, SIZE(state%x)
             sum_aux = sum_aux + state%x(i) * state%m(i) * state%d(i)**3
         end do
@@ -423,6 +481,192 @@ CONTAINS
         state%Z = 1 + state%Z_hc + state%Z_disp
     END SUBROUTINE
     
+    !!! ---------- SUBROTINAS PARA O CALCULO DA FUGACIDADE ABAIXO ---------- !!!    
+    SUBROUTINE calc_zeta_x(state)
+        IMPLICIT NONE
+        TYPE(PC_saft_state), INTENT(INOUT) :: state
+        INTEGER :: n, k
+        !!! EQ (A.34)
+        DO n = 1, 4
+            DO k = 1, SIZE(state%x)
+                state%zeta_x(n, k) = (pi / 6.0d0) * state%rho * state%m(k) * state%d(k) **(n - 1)
+            END DO
+        END DO  
+    END SUBROUTINE calc_zeta_x
+    
+    SUBROUTINE calc_prime_a_hs_x(state)
+        IMPLICIT NONE
+        TYPE(PC_saft_state), INTENT(INOUT) :: state
+        REAL(8) :: aux, aux_1, aux_2, aux_3, aux_4, aux_5, aux_6, aux_7, zeta_aux
+        INTEGER :: k
+        !!! EQ (A.36)
+        zeta_aux = 1 - state%zeta(4)
+        DO k = 1, SIZE(state%x)
+            aux_1 = state%zeta_x(1, k) * state%a_hs / state%zeta(1)
+            aux_2 = 3 * (state%zeta_x(2, k) * state%zeta(3) + state%zeta(2) * state%zeta_x(3, k)) / zeta_aux
+            aux_3 = 3 * state%zeta(2) * state%zeta(3) * state%zeta_x(4, k) / zeta_aux **2
+            aux_4 = 3 * state%zeta(3) **2 * state%zeta_x(3, k) / (state%zeta(4) * zeta_aux **2)
+            aux_5 = state%zeta(3) **3 * state%zeta_x(4, k) * (3 * state%zeta(4) - 1) / (state%zeta(4) **2 * zeta_aux **3)
+            aux = (3 * state%zeta(3) **2 * state%zeta_x(3, k) * state%zeta(4) - 2 * state%zeta(3) **3 * state%zeta_x(4, k)) / state%zeta(4) ** 3
+            aux_6 = (aux - state%zeta_x(1, k)) * LOG(zeta_aux)
+            aux_7 = (state%zeta(1) - state%zeta(3) **3 / state%zeta(4) **2) * state%zeta_x(4, k) / zeta_aux
+            state%prime_a_hs_x(k) = aux_1 + (1/state%zeta(1)) * (aux_2 + aux_3 + aux_4 + aux_5 + aux_6 +aux_7)
+        END DO
+    END SUBROUTINE calc_prime_a_hs_x
+    
+    SUBROUTINE calc_grad_g_ij_x(state)
+        IMPLICIT NONE
+        TYPE(PC_saft_state), INTENT(INOUT) :: state
+        REAL(8) :: aux_1, aux_2, aux_3, zeta_aux
+        REAL(8) :: d_ij
+        INTEGER :: k, i, j
+        !!! EQ (A.37)
+        zeta_aux = 1 - state%zeta(4)
+        DO k = 1, SIZE(state%x)
+            DO i = 1, SIZE(state%x)
+                DO j = 1, SIZE(state%x)
+                    d_ij = state%d(i) * state%d(j) / (state%d(i) + state%d(j))
+                    aux_1 = state%zeta_x(4, k) / zeta_aux ** 2
+                    aux_2 = 3 * state%zeta_x(3, k) / zeta_aux **2 + 6 * state%zeta(3) * state%zeta_x(4, k) / zeta_aux **3
+                    aux_3 = 4 * state%zeta(3) * state%zeta_x(3, k) / zeta_aux **3 + 6 * state%zeta(3) **2 * state%zeta_x(4, k) / zeta_aux **4
+                    state%grad_g_ij_x(k, i, j) = aux_1 + d_ij * aux_2 + d_ij **2 * aux_3
+                END DO
+            END DO 
+        END DO
+    END SUBROUTINE calc_grad_g_ij_x
+    
+    SUBROUTINE calc_grad_a_hard_chain_x(state)
+        IMPLICIT NONE
+        TYPE(PC_saft_state), INTENT(INOUT) :: state
+        REAL(8) :: sum_aux
+        INTEGER k, i
+        !!! EQ (A.35)
+        DO k = 1, SIZE(state%x)
+            sum_aux = 0.0d0
+            DO i = 1, SIZE(state%x)
+                sum_aux = sum_aux + state%x(i) * (state%m(i) - 1) * (state%g_ij(i, i)) **(-1) * state%grad_g_ij_x(k, i, i)
+            END DO
+                state%prime_a_hc_x(k) = state%m(k) * state%a_hs + state%mean_m * state%prime_a_hs_x(k) - sum_aux
+        END DO
+    END SUBROUTINE calc_grad_a_hard_chain_x
+    
+    SUBROUTINE calc_ab_x(state)
+        IMPLICIT NONE
+        TYPE(PC_saft_state), INTENT(INOUT) :: state
+        REAL(8) :: m_aux
+        INTEGER :: k, i
+        !!! EQ (A.44) & (A.45)
+        DO i = 1, 7
+            DO k = 1, SIZE(state%x)
+                m_aux = state%m(k) / state%mean_m ** 2
+                state%a_x(i, k) = m_aux * saft_a1(i) + m_aux * (3 - 4 * state%mean_m) * saft_a2(i)
+                state%b_x(i, k) = m_aux * saft_b1(i) + m_aux * (3 - 4 * state%mean_m) * saft_b2(i)
+            END DO
+        END DO
+        
+    END SUBROUTINE calc_ab_x
+    
+    SUBROUTINE calc_I_12_x(state)
+        IMPLICIT NONE
+        TYPE(PC_saft_state), INTENT(INOUT) :: state
+        REAL(8) :: sum_aux_1, sum_aux_2
+        INTEGER :: k, i
+        
+        DO k = 1, SIZE(state%x)
+            sum_aux_1 = 0.0d0
+            sum_aux_2 = 0.0d0
+            DO i = 1, 7
+                sum_aux_1 = sum_aux_1 + (state%am(i) * i * state%zeta_x(4, k) * state%eta **(i - 2) + state%a_x(i, k) * state%eta **(i - 1))
+                sum_aux_2 = sum_aux_2 + (state%bm(i) * i * state%zeta_x(4, k) * state%eta **(i - 2) + state%b_x(i, k) * state%eta **(i - 1))
+            END DO
+            state%I_1_x(k) = sum_aux_1
+            state%I_2_x(k) = sum_aux_2
+        END DO
+    END SUBROUTINE calc_I_12_x
+    
+    SUBROUTINE calc_C_1_x(state)
+        IMPLICIT NONE
+        TYPE(PC_saft_state), INTENT(INOUT) :: state
+        REAL(8) :: aux_1, aux, aux_2
+        INTEGER :: k
+        !!! EQ (A.41)
+        DO k = 1, SIZE(state%x)
+            aux_1 = state%m(k) * (8 * state%eta - 2 * state%eta **2) / (1 - state%eta) **4
+            aux = ((1 - state%eta) * (2 - state%eta)) **2
+            aux_2 = state%m(k) * (20 * state%eta - 27 * state%eta **2 + 12 * state%eta **3 - 2 * state%eta **4) / aux
+            state%C_1_x(k) = state%C_2 * state%zeta_x(4, k) * state%C_1 ** 2 * (aux_1 - aux_2)
+        END DO
+    END SUBROUTINE calc_C_1_x
+    
+    SUBROUTINE calc_abbr_x(state)
+        IMPLICIT NONE
+        TYPE(PC_saft_state), INTENT(INOUT) :: state
+        REAL(8) :: sum_aux_1, sum_aux_2
+        INTEGER :: k, j
+        !!! EQ (A.39) & (A.40)
+
+        DO k =1, SIZE(state%x)
+            sum_aux_1 = 0.0d0
+            sum_aux_2 = 0.0d0
+            DO j = 1, SIZE(state%x)
+                sum_aux_1 = sum_aux_1 + (state%x(j) * state%m(j) * (state%e_ij(k, j) / state%T) * state%s_ij(k, j) **3)
+                sum_aux_2 = sum_aux_2 + (state%x(j) * state%m(j) * (state%e_ij(k, j) / state%T) **2 * state%s_ij(k, j) **3)
+            END DO
+            state%m2es3_x = 2 * state%m(k) * sum_aux_1
+            state%m2e2s3_x = 2 * state%m(k) * sum_aux_2
+        END DO
+    END SUBROUTINE calc_abbr_x
+    
+    SUBROUTINE calc_a_disp_x(state)
+        IMPLICIT NONE
+        TYPE(PC_saft_state), INTENT(INOUT) :: state
+        REAL(8) :: aux_1, aux, aux_2
+        INTEGER :: k
+        
+        DO k = 1, SIZE(state%x)
+            aux_1 = - 2 * pi * state%rho * (state%I_1_x(k) * state%m2es3 + state%I_1 * state%m2es3_x(k))
+            aux = state%m(k) * state%C_1 * state%I_2 + state%mean_m * state%C_1_x(k) * state%I_2 + state%mean_m * state%C_1 * state%I_2_x(k)
+            aux_2 = - pi * state%rho*(aux * state%m2e2s3 + state%mean_m * state%C_1 * state%I_2 * state%m2e2s3_x(k))
+            state%prime_a_disp_x(k) = aux_1 + aux_2
+        END DO
+    END SUBROUTINE calc_a_disp_x
+    
+    SUBROUTINE residual_helmholtz_x(state)
+        IMPLICIT NONE
+        TYPE(PC_saft_state), INTENT(INOUT) :: state
+        INTEGER :: k
+        !!! Helmholt residual / dx_k
+        DO k = 1, SIZE(state%x)
+            state%prime_a_res_x(k) = state%prime_a_hc_x(k) + state%prime_a_disp_x(k)
+        END DO
+    END SUBROUTINE residual_helmholtz_x
+    
+    SUBROUTINE calc_chemical_potential(state)
+        IMPLICIT NONE
+        TYPE(PC_saft_state), INTENT(INOUT) :: state
+        REAL(8) :: sum_aux
+        INTEGER :: k, j
+        !!! EQ (A.33)
+        DO k = 1, SIZE(state%x)
+            sum_aux = 0.0d0
+            DO j = 1, SIZE(state%x)
+                sum_aux = sum_aux + state%x(j) * state%prime_a_res_x(j)
+            END DO
+            state%mi_kT(k)= state%a_res + (state%Z - 1) + state%prime_a_res_x(k) - sum_aux
+        END DO
+    END SUBROUTINE calc_chemical_potential
+    
+    SUBROUTINE fugacity(state)
+        IMPLICIT NONE
+        TYPE(PC_saft_state), INTENT(INOUT) :: state
+        INTEGER :: k
+        !!! EQ (A.32)
+        DO k = 1, SIZE(state%x)
+            state%ln_phi(k) = state%mi_kT(k) - LOG(state%Z)
+            state%phi(k) = EXP(state%ln_phi(k))
+        END DO
+    END SUBROUTINE fugacity
+    !!! ---------- SUBROTINAS PARA O CALCULO DA FUGACIDADE ACIMA ---------- !!!    
     
     !!! Funcoes para determinar o eta
     FUNCTION calc_pressao(state) RESULT(P)

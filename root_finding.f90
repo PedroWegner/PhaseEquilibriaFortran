@@ -93,7 +93,7 @@ contains
                 END IF
             END IF
         
-            IF (ABS(x2 - x1) < 1.0d-8) EXIT
+            IF (ABS(x2 - x1) < 1.0d-12) EXIT
     
             END DO
         IF (f1 < f2) THEN
