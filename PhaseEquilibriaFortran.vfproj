@@ -54,23 +54,13 @@
 		<Filter Name="Header Files" Filter="fi;fd"/>
 		<Filter Name="Resource Files" Filter="rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe"/>
 		<Filter Name="Source Files" Filter="f90;for;f;fpp;ftn;def;odl;idl">
-			<File RelativePath="..\MINPACK\dpmpar.f"/>
-			<File RelativePath="..\MINPACK\enorm.f">
-			</File>
 			<File RelativePath=".\EoS_module.f90"/>
-			<File RelativePath="..\MINPACK\fdjac2.f">
-			</File>
 			<File RelativePath=".\flash_module.f90"/>
-			<File RelativePath="..\MINPACK\lmdif.f"/>
-			<File RelativePath="..\MINPACK\lmpar.f"/>
 			<File RelativePath=".\PC_saft_module.f90"/>
-			<File RelativePath=".\PhaseEquilibria.f90">
+			<File RelativePath=".\PhaseEquilibria.f90"/>
+			<File RelativePath=".\PhaseEquilibriaFortran.f90"/>
+			<File RelativePath=".\root_finding.f90">
 			</File>
-			<File RelativePath=".\PhaseEquilibriaFortran.f90">
-			</File>
-			<File RelativePath="..\MINPACK\qrfac.f"/>
-			<File RelativePath="..\MINPACK\qrsolv.f"/>
-			<File RelativePath=".\root_finding.f90"/>
 			<File RelativePath=".\thermo_data.f90"/>
 		</Filter>
 		<File RelativePath=".\ReadMe.txt"/>
